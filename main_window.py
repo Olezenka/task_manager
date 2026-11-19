@@ -1,9 +1,13 @@
 from PyQt6.QtWidgets import *
-
+from PyQt6.QtGui import QColor
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.init_ui()
+        self.connect_signals()
+
+    def init_ui(self):
         self.setWindowTitle("Менеджер задач")
         self.resize(500,400)
         self.title_label = QLabel("Новая задача")
@@ -12,13 +16,11 @@ class MainWindow(QMainWindow):
         self.add_button = QPushButton("Добавить")
         self.task_list = QListWidget()
         self.delete_button = QPushButton("Удалить")
+        self.deleteComplete_button = QPushButton("Удалить выполненные задачи")
         self.clear_button = QPushButton("Очистить всё")
         self.counter_label = QLabel("Количество задач: 0")
+        self.counter_completed_label = QLabel("Количество выполненных задач: 0")
 
-        self.init_ui()
-        self.connect_signals()
-
-    def init_ui(self):
         central_widget = QWidget()  # Задать окно
         self.setCentralWidget(central_widget)  # Пустой контейнер для содержания окна
 
@@ -35,7 +37,9 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(input_layout)
         main_layout.addWidget(self.task_list)
         main_layout.addLayout(buttons_layout)
+        main_layout.addWidget(self.deleteComplete_button)
         main_layout.addWidget(self.counter_label)
+        main_layout.addWidget(self.counter_completed_label)
 
         central_widget.setLayout(main_layout)
 
@@ -44,6 +48,8 @@ class MainWindow(QMainWindow):
         self.task_input.returnPressed.connect(self.add_task)
         self.delete_button.clicked.connect(self.delete_task)
         self.clear_button.clicked.connect(self.clear_task)
+        self.task_list.doubleClicked.connect(self.setCheckState)
+        self.deleteComplete_button.clicked.connect(self.deleteCompleted_task)
 
     def add_task(self):
         text = self.task_input.text().strip()
@@ -54,9 +60,9 @@ class MainWindow(QMainWindow):
                 "Введите название задачи"
             )
             return
+
         self.task_list.addItem(text)
         self.task_input.clear()
-
         self.update_counter()
 
     def delete_task(self):
@@ -92,3 +98,52 @@ class MainWindow(QMainWindow):
 
     def update_counter(self):
         self.counter_label.setText(f"Количество задач: {len(self.task_list)}")
+        array_completed_task = [
+            self.task_list.item(i)
+            for i in range(self.task_list.count())
+            if self.task_list.item(i).background().color() == QColor("#76C457")
+        ]
+        self.counter_completed_label.setText(f"Количество выполненных задач: {len(array_completed_task)}")
+
+    def setCheckState(self):
+        row = self.task_list.currentRow()
+        item = self.task_list.item(row)
+        if item.background().color() == QColor("#76C457"):
+            QMessageBox.warning(
+                self,
+                "Ошибка",
+                "Задача уже завершена"
+            )
+            return
+        answer = QMessageBox.question(self, "Завершение задачи", "Завершить задачу?")
+        if answer == QMessageBox.StandardButton.Yes:
+            item.setBackground(QColor("#76C457"))
+            font = item.font()
+            font.setStrikeOut(True)
+            item.setFont(font)
+            moved_item = self.task_list.takeItem(row)
+            self.task_list.addItem(moved_item)
+            self.update_counter()
+
+    def deleteCompleted_task(self):
+        answer = QMessageBox.question(
+            self,
+            "Очистка выполненых задач",
+            "Очистить все выполненные задачи?"
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            array_completed_task = [
+                self.task_list.item(i)
+                for i in range(self.task_list.count())
+                if self.task_list.item(i).background().color() == QColor("#76C457")
+            ]
+
+            if not array_completed_task:
+                QMessageBox.information(self, "Очистка", "Выполненные задачи отсутствуют")
+                return
+
+            for i in array_completed_task:
+                row = self.task_list.row(i)
+                self.task_list.takeItem(row)
+
+            self.update_counter()

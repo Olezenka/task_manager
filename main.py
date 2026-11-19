@@ -9,21 +9,6 @@ def main():
     window.show()
     sys.exit(app.exec())
 
-# def main():
-#     app = QApplication(sys.argv)
-#     window = QWidget()
-#     window.setWindowTitle("Менеджер задач")
-#     window.resize(500,400)
-#     layout = QVBoxLayout()
-#     layout.addWidget(QLabel("Новая задача"))
-#     layout.addWidget(QLineEdit())
-#     layout.addWidget(QListWidget())
-#
-#     window.setLayout(layout)
-#     window.show()
-#     sys.exit(app.exec())
-
-
 if __name__ == "__main__":
     main()
 
